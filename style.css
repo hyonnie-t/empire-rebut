@@ -1,0 +1,139 @@
+/* 배색: 19세기 박람회 포스터·선전물에 쓰던 자줏빛 잉크(--plum)를 «제국주의자의 말»의 색으로,
+ * 반박하는 학생 쪽은 붉은 교정 인장(--seal)으로. 형광펜은 연노랑(--marker). 바탕은 옅은 라일락 회색.
+ * 최근 앱(국민국가 남색·주황, 문화재 나무·놋쇠, 산업혁명 그을음·벽돌, 시대 생존 이끼·감, 현대 노예 쇠·녹)과 겹치지 않게. */
+:root{
+  --paper:#ebe7ee;--page:#fdfcfd;--ink:#26222b;--muted:#5d5766;--line:#d6cfdc;
+  --plum:#5a2f5e;--plum-deep:#3e1f42;--plum-wash:#f1e9f2;
+  --seal:#a3283c;--seal-wash:#f9e6e9;
+  --slate:#3d5a73;--slate-wash:#e5edf3;
+  --marker:#fbe98a;--marker-line:#e2c84a;
+  --alert:#a3283c;--ok:#2f6b4f;
+  --serif:"Noto Serif KR","Batang",serif;--sans:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{font-size:17px;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);line-height:1.8;word-break:keep-all;overflow-wrap:anywhere}
+button,input,textarea{font-family:var(--sans);font-size:17px;color:var(--ink)}
+h1,h2,h3{font-family:var(--sans);line-height:1.35;margin:0 0 8px}
+h2{font-size:1.15rem}
+h3{font-size:1.05rem}
+.page{max-width:28rem;margin:0 auto;padding:0 16px 72px}
+@media (min-width:600px){.page{max-width:48rem}}
+@media (min-width:1100px){.page{max-width:64rem}}
+@media (min-width:768px){html{font-size:18px}}
+
+.preview-bar{background:var(--plum-deep);color:#fff;text-align:center;padding:6px 12px;font:500 16px var(--sans)}
+
+/* 머리: 단계 막대는 늘 보이게 sticky */
+.book-head{position:sticky;top:0;z-index:5;background:var(--paper);padding:12px 0 8px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.eyebrow{font:500 .85rem var(--sans);color:var(--plum);letter-spacing:.02em}
+.book-head h1{font-size:1.3rem;margin:2px 0 6px}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;list-style:none;padding:0;margin:0}
+.steps li{font:500 .85rem var(--sans);text-align:center;padding:4px 0;border-top:3px solid var(--line);color:var(--muted)}
+.steps li.done{border-color:var(--plum);color:var(--plum)}
+.steps li.now{border-color:var(--seal);color:var(--seal);font-weight:700}
+
+/* 고정 띠 */
+.pin{background:var(--page);border:1px solid var(--line);border-left:4px solid var(--plum);border-radius:5px;padding:8px 12px;margin-bottom:12px;font-size:1rem;line-height:1.6}
+.pin p{margin:2px 0}
+.pin b{font:700 .8rem var(--sans);color:var(--plum);margin-right:6px}
+.pin .mine b{color:var(--seal)}
+.pin .claim-full{font-family:var(--serif)}
+.pin mark{background:linear-gradient(transparent 40%,var(--marker) 40%);color:inherit}
+
+.card{background:var(--page);border:1px solid var(--line);border-radius:5px;padding:16px;margin-bottom:12px;box-shadow:0 1px 2px rgba(40,20,50,.06)}
+.lead{font-size:1.1rem;font-weight:700;margin:0 0 12px}
+.progress{font:700 .85rem var(--sans);color:var(--plum);margin:4px 0 6px}
+.how{font:400 .92rem var(--sans);color:var(--muted);margin:0 0 10px}
+.q{display:block;font:700 1rem var(--sans);margin:16px 0 6px}
+.q.first{margin-top:0}
+label{display:block;font:500 .95rem var(--sans);margin:10px 0 4px}
+input,textarea{width:100%;border:1px solid var(--line);border-radius:5px;padding:10px 12px;background:#fff;line-height:1.6}
+textarea{resize:vertical}
+input:focus,textarea:focus{outline:2px solid var(--plum);outline-offset:1px}
+.count{font:400 .85rem var(--sans);color:var(--muted);margin:4px 0 0;text-align:right}
+.count.warn{color:var(--alert)}
+.err{color:var(--alert);font:500 .95rem var(--sans);min-height:0;margin:6px 0}
+.ok{color:var(--ok);font:500 .95rem var(--sans)}
+.note,.note-cap{font-size:.9rem;color:var(--muted);margin:6px 0 0}
+.cite{font-size:.95rem;color:var(--muted);text-align:right;margin:6px 0 0}
+.cite:empty,.note-cap:empty{display:none}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:10px 22px;border:1px solid var(--plum);border-radius:5px;background:var(--plum);color:#fff;font:700 1rem var(--sans);cursor:pointer;text-decoration:none;touch-action:manipulation}
+.btn:disabled{background:#cfc8d4;border-color:#cfc8d4;color:#fff;cursor:not-allowed}
+.btn-ghost{background:var(--page);color:var(--plum)}
+.btn.wide{width:100%;margin-top:12px}
+.nav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px}
+
+/* 주장 카드 6장 */
+.claim-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+@media (min-width:600px){.claim-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1100px){.claim-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.claim{position:relative;background:var(--page);border:1px solid var(--line);border-radius:5px;padding:14px 14px 12px;cursor:pointer;text-align:left;transition:border-color .15s,background .15s}
+.claim[aria-checked="true"]{border-color:var(--plum);background:var(--plum-wash);box-shadow:inset 0 0 0 1px var(--plum)}
+.claim[aria-checked="true"]::after{content:"✓";position:absolute;top:8px;right:10px;font:700 1rem var(--sans);color:var(--plum)}
+.claim .c-head{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;margin-bottom:4px;padding-right:20px}
+.claim .c-title{font:700 1rem var(--sans)}
+.claim .c-kind{font:500 .78rem var(--sans);color:var(--plum);border:1px solid var(--plum);border-radius:3px;padding:0 5px}
+.claim .c-text{font-size:.95rem;margin:0}
+.claim .c-page{font:400 .8rem var(--sans);color:var(--muted);text-align:right;margin:4px 0 0}
+
+/* 형광펜 조각 */
+.mark-box{font-size:1.05rem;line-height:2.1}
+.chunk{cursor:pointer;border-radius:3px;padding:3px 2px;background:var(--plum-wash);box-shadow:inset 0 -2px 0 var(--line);-webkit-box-decoration-break:clone;box-decoration-break:clone;transition:background .15s;-webkit-tap-highlight-color:transparent}
+.chunk[aria-checked="true"]{background:var(--marker);box-shadow:inset 0 -2px 0 var(--marker-line)}
+.fill-line{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px;align-items:center;font-size:1rem}
+@media (max-width:420px){.fill-line{grid-template-columns:minmax(0,1fr)}}
+
+.hint-btn{background:none;border:none;color:var(--plum);font:500 .95rem var(--sans);padding:10px 0 0;cursor:pointer}
+.hint{background:var(--plum-wash);border-radius:5px;padding:10px 12px;font-size:.95rem;margin:8px 0 0}
+
+/* 읽기 */
+.word-box{background:var(--slate-wash);border-left:4px solid var(--slate);border-radius:4px;padding:8px 12px;font-size:.95rem;margin:0 0 10px}
+.page-tag{font:500 .8rem var(--sans);color:var(--muted);float:right}
+.source h2{margin-right:60px}
+.src-body p{margin:0 0 8px}
+.cap{background:var(--page);border:1px dashed var(--line);border-radius:5px;padding:12px 14px;margin-bottom:12px;font-size:.95rem}
+.cap .cap-head{font:700 .9rem var(--sans);color:var(--slate);display:block;margin-bottom:2px}
+.cap .cap-tag{font:500 .75rem var(--sans);color:var(--muted);margin-right:6px}
+.react-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.react{border:1px solid var(--line);border-radius:5px;background:var(--page);min-height:56px;font:700 .95rem var(--sans);cursor:pointer;padding:6px}
+.react .ri{display:block;font-size:1.2rem}
+.react[aria-checked="true"]{border-color:var(--seal);background:var(--seal-wash);color:var(--seal)}
+
+/* 근거 고르기 */
+.ev-list{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-bottom:12px}
+@media (min-width:600px){.ev-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ev{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid var(--line);border-radius:5px;background:var(--page);padding:10px 12px;min-height:52px;cursor:pointer;font:500 .95rem var(--sans);text-align:left}
+.ev[aria-checked="true"]{border-color:var(--plum);background:var(--plum-wash);box-shadow:inset 0 0 0 1px var(--plum)}
+.ev .ev-tag{font-size:.8rem;color:var(--muted);white-space:nowrap}
+.ev .ev-tag.clash{color:var(--seal);font-weight:700}
+.sent-list{display:grid;gap:8px}
+.sent{border:1px solid var(--line);border-radius:5px;padding:10px 12px;cursor:pointer;font-size:.98rem;background:#fff}
+.sent[aria-checked="true"]{background:linear-gradient(transparent 0,var(--marker) 0);border-color:var(--marker-line)}
+.sent .s-tag{font:500 .75rem var(--sans);color:var(--muted);display:block}
+
+/* 그림: 교과서와 같은 원본(퍼블릭 도메인)만. 출처 한 줄 */
+.fig{margin:10px 0 0}
+.fig img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:4px;background:#fff}
+.fig .credit{font:400 .8rem var(--sans);color:var(--muted);margin-top:4px}
+.fig.thumb{margin:4px 0 8px}
+.fig.thumb img{max-height:none}
+.fig.thumb .credit{display:none}
+#markFig .fig{margin:0 0 12px}
+
+/* 마무리 */
+.summary{background:#fff;border:1px solid var(--line);border-radius:5px;padding:12px 14px;white-space:pre-wrap;font-size:1rem}
+.summary .sum-head{font:700 .9rem var(--sans);color:var(--plum);margin:0 0 4px}
+.summary p{margin:0}
+.out-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.padlet-box{font-size:.95rem;margin-top:8px}
+.padlet-box p{margin:4px 0}
+
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 16px;border-radius:5px;font:500 .95rem var(--sans);z-index:20;max-width:90vw}
+
+/* 움직임: 카드가 보이는 순간 한 번 떠오름 */
+.rise{opacity:0;transform:translateY(8px);transition:opacity .3s,transform .3s}
+.rise.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.rise{opacity:1;transform:none}}

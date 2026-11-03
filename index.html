@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<!-- 포털 로그인 세션 자동 첨부(history26 v83) -->
+<script src="https://hyonnie-t.github.io/history26/snippets/portal_auth.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>제국주의자에게 반박하기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="previewBar" class="preview-bar" hidden></div>
+<main class="page">
+  <header class="book-head">
+    <div id="eyebrow" class="eyebrow"></div>
+    <h1 id="appTitle"></h1>
+    <ol id="steps" class="steps" aria-label="진행 단계" hidden>
+      <li data-k="find">찾기</li>
+      <li data-k="read">읽기</li>
+      <li data-k="write">쓰기</li>
+      <li data-k="wrap">마무리</li>
+    </ol>
+  </header>
+
+  <!-- 고정 띠: 앞에서 고른 것·쓴 것을 다시 보여 준다 -->
+  <aside id="pin" class="pin" hidden></aside>
+
+  <!-- S0 시작 -->
+  <section id="s0" class="screen">
+    <div class="card intro">
+      <p id="introQ" class="lead"></p>
+      <label for="sid">학번 (5자리, 예: 20512)</label>
+      <input id="sid" inputmode="numeric" maxlength="5" autocomplete="off" data-no-draft>
+      <label for="sname">이름</label>
+      <input id="sname" autocomplete="off" data-no-draft>
+      <p id="startErr" class="err" role="alert"></p>
+      <button id="startBtn" class="btn wide">시작</button>
+    </div>
+  </section>
+
+  <!-- S1 찾기 1/2: 주장 고르기 -->
+  <section id="s1" class="screen" hidden>
+    <div class="progress">찾기 1/2</div>
+    <h2 id="claimQ"></h2>
+    <p id="claimHow" class="how"></p>
+    <div id="claimList" class="claim-grid" role="radiogroup"></div>
+    <div class="nav"><span></span><button id="s1Next" class="btn">다음</button></div>
+  </section>
+
+  <!-- S2 찾기 2/2: 형광펜 + 믿음(전제) 한 줄 -->
+  <section id="s2" class="screen" hidden>
+    <div class="progress">찾기 2/2</div>
+    <div class="card">
+      <h2 id="markQ"></h2>
+      <p id="markHow" class="how"></p>
+      <div id="markFig"></div>
+      <div id="markBox" class="mark-box"></div>
+      <p id="markCite" class="cite"></p>
+      <p id="markNote" class="note-cap"></p>
+    </div>
+    <div class="card">
+      <label for="premise" id="premiseQ" class="q"></label>
+      <div class="fill-line">
+        <span id="premiseLead"></span>
+        <input id="premise" maxlength="80" autocomplete="off" data-draft="premise">
+        <span id="premiseTail"></span>
+      </div>
+      <p id="premiseCount" class="count"></p>
+      <button type="button" class="hint-btn" data-hint="premiseHint" aria-expanded="false">💡 막막하면 힌트 보기</button>
+      <p id="premiseHint" class="hint" hidden></p>
+    </div>
+    <p id="s2Err" class="err" role="alert"></p>
+    <div class="nav"><button id="s2Prev" class="btn btn-ghost">이전</button><button id="s2Next" class="btn">다음</button></div>
+  </section>
+
+  <!-- S3 읽기 1/5 ~ 5/5 -->
+  <section id="s3" class="screen" hidden>
+    <div id="readProg" class="progress"></div>
+    <p id="expoWord" class="word-box" hidden></p>
+    <p id="readHow" class="how"></p>
+    <article class="card source">
+      <div id="srcPage" class="page-tag"></div>
+      <h2 id="srcTitle"></h2>
+      <div id="srcBody" class="src-body"></div>
+      <p id="srcCite" class="cite"></p>
+    </article>
+    <div id="srcCaps"></div>
+    <div class="card react-card">
+      <p id="reactQ" class="q first"></p>
+      <div id="reactBox" class="react-row" role="radiogroup"></div>
+    </div>
+    <p id="s3Err" class="err" role="alert"></p>
+    <div class="nav"><button id="s3Prev" class="btn btn-ghost">이전</button><button id="s3Next" class="btn">다음</button></div>
+  </section>
+
+  <!-- S4 읽기 마지막: 근거 고르기 -->
+  <section id="s4" class="screen" hidden>
+    <div class="progress">읽기 마지막</div>
+    <h2 id="evQ"></h2>
+    <div id="evList" class="ev-list" role="radiogroup"></div>
+    <div id="evOpen" class="card" hidden>
+      <div id="evPage" class="page-tag"></div>
+      <h3 id="evTitle"></h3>
+      <p id="evHow" class="how"></p>
+      <div id="evSents" class="sent-list"></div>
+    </div>
+    <p id="s4Err" class="err" role="alert"></p>
+    <div class="nav"><button id="s4Prev" class="btn btn-ghost">이전</button><button id="s4Next" class="btn">다음</button></div>
+  </section>
+
+  <!-- S5 쓰기 -->
+  <section id="s5" class="screen" hidden>
+    <div class="progress">쓰기</div>
+    <div class="card">
+      <label for="w1" id="w1Q" class="q first"></label>
+      <textarea id="w1" rows="2"></textarea>
+      <p id="w1c" class="count"></p>
+      <label for="w2" id="w2Q" class="q"></label>
+      <textarea id="w2" rows="2"></textarea>
+      <p id="w2c" class="count"></p>
+      <button type="button" class="hint-btn" data-hint="wHint" aria-expanded="false">💡 막막하면 힌트 보기</button>
+      <p id="wHint" class="hint" hidden></p>
+    </div>
+    <p id="s5Err" class="err" role="alert"></p>
+    <div class="nav"><button id="s5Prev" class="btn btn-ghost">이전</button><button id="s5Next" class="btn">다 썼어</button></div>
+  </section>
+
+  <!-- S6 마무리 -->
+  <section id="s6" class="screen" hidden>
+    <div class="progress">마무리</div>
+    <div class="card">
+      <h2>완성한 글</h2>
+      <div id="summary" class="summary"></div>
+      <p id="bodyCount" class="count"></p>
+      <div class="out-row">
+        <button id="copyBtn" class="btn btn-ghost">글 복사</button>
+        <a id="padletBtn" class="btn btn-ghost" target="_blank" rel="noopener" hidden>우리 반 패들렛 열기</a>
+      </div>
+      <div class="padlet-box">
+        <p id="padletNote"></p>
+        <p id="padletMsg" class="note"></p>
+      </div>
+      <button id="submitBtn" class="btn wide">제출</button>
+      <p id="outMsg" class="ok" role="status"></p>
+      <p id="outErr" class="err" role="alert"></p>
+    </div>
+    <div class="nav"><button id="s6Prev" class="btn btn-ghost">이전</button><span></span></div>
+  </section>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+</main>
+<script src="focus_guard.js"></script>
+<script src="glossary.js"></script>
+<script src="draft_guard.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
