@@ -1,6 +1,7 @@
 /* 주제34 「제국주의자에게 반박하기」 — 로직(app.js)
- * 화면 순서: 시작 → 찾기(주장 고르기 → 형광펜·믿음 한 줄) → 읽기(박람회 자료 5개, 자료마다 반응 한 번 → 근거 문장 고르기) → 쓰기(①②) → 마무리(복사·패들렛·제출)
- * 문구·원문은 data.js. */
+ * 화면 순서: 시작 → 고르기(비판할 대상 9장: 166쪽 주장 6 + 박람회 3) → 뜯어보기(형광펜 + 위·아래·기준 빈칸)
+ *          → 근거(166~169쪽 어디서든 자료 하나 + 문장 1~2개) → 쓰기(①②) → 마무리(복사·패들렛·제출)
+ * 문구·원문은 data.js. 2026-11-03 효니 피드백으로 «박람회=근거» 구조에서 «박람회도 비판 대상»으로 바꿈. */
 const CONFIG = {
   SHEET_WEBAPP_URL: "https://script.google.com/macros/s/AKfycbyXSjCfWY_HiZFqW_OBR-FQDoIfF1z_STqyKWUI31MacHeY3u7hbirFSFDvW-5yuUHaJQ/exec",
   /* 포털 커리큘럼 관리에 이 id 하나로 활동을 등록한다 */
@@ -8,14 +9,15 @@ const CONFIG = {
 };
 
 const S = {
-  sid: "", name: "", grade: 0, ban: 0, preview: false, screen: "s1", ri: 0,
-  claim: "", marks: [], reacts: {}, ev: "", quote: [],
+  sid: "", name: "", grade: 0, ban: 0, preview: false, screen: "s1",
+  target: "", marks: [], ev: "", quote: [],
   copied: false, sending: false, submitted: false, padletUrl: ""
 };
 
-const SCREEN_STAGE = { s1: "find", s2: "find", s3: "read", s4: "read", s5: "write", s6: "wrap" };
-const STAGES = ["find", "read", "write", "wrap"];
-const SAVE_KEYS = ["screen", "ri", "claim", "marks", "reacts", "ev", "quote"];
+const SCREEN_STAGE = { s1: "pick", s2: "open", s3: "ev", s4: "write", s5: "wrap" };
+const STAGES = ["pick", "open", "ev", "write", "wrap"];
+const SAVE_KEYS = ["screen", "target", "marks", "ev", "quote"];
+const FRAME_IDS = ["f1", "f2", "f3"];
 
 const $ = id => document.getElementById(id);
 const byId = (arr, id) => arr.find(x => x.id === id);
@@ -53,6 +55,7 @@ function load() {
     const v = JSON.parse(localStorage.getItem(storeKey()) || "null");
     if (!v || Date.now() - (v.ts || 0) > 7 * 864e5) return;
     SAVE_KEYS.forEach(k => { if (v[k] !== undefined) S[k] = v[k]; });
+    if (S.target && !byId(TARGETS, S.target)) { S.target = ""; S.marks = []; } // 옛 판(주장 id 체계) 기록은 버린다
   } catch (e) { /* 무시 */ }
 }
 
@@ -99,7 +102,7 @@ async function loadPadletUrl(grade, ban) {
 }
 
 /* ── 공용: 버튼 대신 role=radio/checkbox div — 버튼 안은 glossary.js가 밑줄을 못 긋는다.
- *    밑줄 낱말(.term)을 누르면 풀이만 열고 고르기는 하지 않는다. ── */
+ *    밑줄 낱말(.term)을 누르거나 그 위에서 Enter를 치면 풀이만 열고 고르기는 하지 않는다. ── */
 function pickable(node, role, checked, onPick) {
   node.setAttribute("role", role);
   node.tabIndex = 0;
@@ -117,7 +120,7 @@ function rise(node) {
   return node;
 }
 
-/* 그림 + 출처 한 줄. 누르면 새 탭에서 크게 본다 */
+/* 그림 + 출처 한 줄 */
 function figure(img, cls) {
   const f = el("figure", "fig" + (cls ? " " + cls : ""));
   const i = el("img");
@@ -127,6 +130,18 @@ function figure(img, cls) {
   return f;
 }
 
+/* 사진 설명 카드(본문 카드와 따로) */
+function captionCard(c) {
+  const d = el("div", "cap");
+  const h = el("span", "cap-head");
+  h.appendChild(el("span", "cap-tag", "사진 설명"));
+  h.appendChild(document.createTextNode(c.head));
+  d.appendChild(h);
+  d.appendChild(el("span", "", c.text));
+  if (c.img) d.appendChild(figure(c.img));
+  return d;
+}
+
 function toast(msg) {
   const t = $("toast");
   t.textContent = msg; t.hidden = false;
@@ -134,18 +149,33 @@ function toast(msg) {
   toast.tm = setTimeout(() => { t.hidden = true; }, 2200);
 }
 
-const claimObj = () => byId(CLAIMS, S.claim);
-const evObj = () => byId(SOURCES, S.ev);
+const targetObj = () => byId(TARGETS, S.target);
+const frameOf = t => FRAMES[(t && t.frame) || "rank"];
+const SOURCES_ALL = () => [REFERENCE].concat(TARGETS); // 근거는 166~169쪽 어디서든(조선 사람의 목소리를 맨 앞에)
+const evObj = () => byId(SOURCES_ALL(), S.ev);
+/* 근거로 고를 수 있는 문장: 형광펜 조각을 문장 단위로 다시 묶고(마침표로 끝날 때까지, 10자 미만은 다음 문장에 붙임) + 사진 설명.
+ * «제국주의 국가는»·«우리 동포여.»처럼 뜻이 안 서는 조각만 골라지는 것을 막는다. */
+function sentList(s) {
+  const out = [];
+  let cur = "";
+  parts(s.text).forEach(t => {
+    cur += t;
+    if (/[.?!]["'」]?\s*$/.test(cur) && cur.trim().length >= 10) { out.push(cur.trim()); cur = ""; }
+  });
+  if (cur.trim()) out.push(cur.trim());
+  return out.concat(s.captions.map(c => c.head + " " + c.text));
+}
 function quoteText() {
   const s = evObj();
   if (!s) return "";
   const list = sentList(s);
   return S.quote.slice().sort((a, b) => a - b).map(i => list[i]).filter(Boolean).join(" ");
 }
-/* 근거로 고를 수 있는 문장: 본문 문장 + 캡션 */
-function sentList(s) {
-  return parts(s.body).map(t => t.trim()).concat(s.captions.map(c => c.head + " " + c.text));
+/* 빈칸 값 [{label, v}] — 쓰기 화면 고정 띠·시트 글에 같이 쓴다 */
+function frameVals() {
+  return frameOf(targetObj()).map(f => ({ label: f.label, v: val(f.id) }));
 }
+const pageLabel = t => "교과서 " + t.page + "쪽";
 
 /* ── 화면 전환 ── */
 function show(id) {
@@ -160,12 +190,11 @@ function show(id) {
       li.classList.toggle("now", i === k);
     });
   }
-  if (id === "s1") renderClaims();
-  if (id === "s2") renderMark();
-  if (id === "s3") renderRead();
-  if (id === "s4") renderEvidence();
-  if (id === "s5") refreshWrite();
-  if (id === "s6") renderSummary();
+  if (id === "s1") renderPick();
+  if (id === "s2") renderOpen();
+  if (id === "s3") renderEvidence();
+  if (id === "s4") refreshWrite();
+  if (id === "s5") renderSummary();
   renderPin(id);
   window.scrollTo(0, 0);
 }
@@ -174,157 +203,161 @@ function show(id) {
 function renderPin(id) {
   const box = $("pin");
   box.innerHTML = "";
-  const c = claimObj();
-  if (!c || !["s3", "s4", "s5"].includes(id)) { box.hidden = true; return; }
+  const t = targetObj();
+  if (!t || !["s3", "s4"].includes(id)) { box.hidden = true; return; }
   const line = (label, text, cls) => {
     const p = el("p", cls || "");
     p.appendChild(el("b", "", label));
     p.appendChild(document.createTextNode(text));
     box.appendChild(p);
   };
-  if (id === "s5") { // 주장 원문 + 내가 칠한 형광펜
+  if (id === "s4") { // 대상 원문 + 내가 칠한 형광펜
     const p = el("p", "claim-full");
-    p.appendChild(el("b", "", "주장"));
-    parts(c.text).forEach((t, i) => p.appendChild(S.marks.includes(i) ? el("mark", "", t) : document.createTextNode(t)));
+    p.appendChild(el("b", "", t.title));
+    parts(t.text).forEach((x, i) => p.appendChild(S.marks.includes(i) ? el("mark", "", x) : document.createTextNode(x)));
     box.appendChild(p);
+  } else {
+    line("대상", t.title + " (" + t.page + "쪽)");
   }
-  else line("주장", c.title);
-  line("이 주장이 믿는 것", val("premise") || "…", "mine");
-  if (id === "s5" && evObj()) line("근거 · " + evObj().title + " (" + evObj().page + "쪽)", quoteText() || "…", "mine");
+  frameVals().forEach(f => line(f.label, f.v || "…", "mine"));
+  if (id === "s4" && evObj()) line("근거 · " + evObj().title + " (" + evObj().page + "쪽)", quoteText() || "…", "mine");
   box.hidden = false;
 }
 
-/* ── 찾기 1/2: 주장 고르기 ── */
-function renderClaims() {
-  const box = $("claimList");
+/* ── 고르기: 9장, 두 묶음 ── */
+function renderPick() {
+  const box = $("pickList");
   box.innerHTML = "";
-  CLAIMS.forEach(c => {
-    const card = el("div", "claim");
-    const head = el("div", "c-head");
-    head.appendChild(el("span", "c-title", c.title));
-    head.appendChild(el("span", "c-kind", c.kind));
-    card.appendChild(head);
-    if (c.img) card.appendChild(figure(c.img, "thumb"));
-    card.appendChild(el("p", "c-text", plain(c.text) + (c.cite ? " " + c.cite : "")));
-    card.appendChild(el("p", "c-page", c.page + "쪽"));
-    pickable(card, "radio", S.claim === c.id, () => {
-      if (S.claim && S.claim !== c.id && (val("premise") || S.ev) && !confirm("주장을 바꾸면 형광펜·믿음·근거를 다시 골라야 해. 바꿀까?")) return;
-      if (S.claim !== c.id) { // 다른 주장의 믿음·근거가 섞이지 않게 비운다(쓰기 칸 ①②는 학생 글이라 남긴다)
-        S.claim = c.id; S.marks = []; S.ev = ""; S.quote = [];
-        $("premise").value = ""; $("premise").dispatchEvent(new Event("input", { bubbles: true }));
-      }
-      save();
-      box.querySelectorAll(".claim").forEach(x => x.setAttribute("aria-checked", x === card ? "true" : "false"));
-      $("s1Next").disabled = false;
+  GROUPS.forEach(g => {
+    box.appendChild(el("h3", "group-head", g.name));
+    const grid = el("div", "claim-grid");
+    grid.setAttribute("role", "radiogroup");
+    TARGETS.filter(t => t.group === g.id).forEach(t => {
+      const card = el("div", "claim");
+      const head = el("div", "c-head");
+      head.appendChild(el("span", "c-title", t.title));
+      head.appendChild(el("span", "c-kind", t.kind));
+      card.appendChild(head);
+      if (t.img) card.appendChild(figure(t.img, "thumb"));
+      const ps = parts(t.text);
+      const preview = g.id === "expo" ? ps[0].trim() + " …" : plain(t.text) + (t.cite ? " " + t.cite : "");
+      card.appendChild(el("p", "c-text", preview));
+      card.appendChild(el("p", "c-page", t.page + "쪽"));
+      pickable(card, "radio", S.target === t.id, () => pickTarget(t, card));
+      grid.appendChild(rise(card));
     });
-    box.appendChild(rise(card));
+    box.appendChild(grid);
   });
-  $("s1Next").disabled = !S.claim && !skip();
+  $("s1Next").disabled = !S.target && !skip();
 }
 
-/* ── 찾기 2/2: 형광펜 + 믿음 한 줄 ── */
-function renderMark() {
-  const c = claimObj() || CLAIMS[0];
+function pickTarget(t, card) {
+  if (S.submitted) { toast("이미 제출했어. 바꾸려면 선생님께 말해 줘."); return; }
+  if (S.target && S.target !== t.id && (S.marks.length || FRAME_IDS.some(id => val(id)) || S.ev) &&
+      !confirm("대상을 바꾸면 형광펜·빈칸·근거를 다시 골라야 해. 바꿀까?")) return;
+  if (S.target !== t.id) { // 다른 대상의 빈칸·근거가 섞이지 않게 비운다(쓰기 칸 ①②는 학생 글이라 남긴다)
+    S.target = t.id; S.marks = []; S.ev = ""; S.quote = [];
+    FRAME_IDS.forEach(id => { $(id).value = ""; $(id).dispatchEvent(new Event("input", { bubbles: true })); });
+  }
+  save();
+  $("pickList").querySelectorAll(".claim").forEach(x => x.setAttribute("aria-checked", x === card ? "true" : "false"));
+  $("s1Next").disabled = false;
+}
+
+/* ── 뜯어보기: 형광펜 + 빈칸 ── */
+function renderOpen() {
+  const t = targetObj() || TARGETS[0];
+  $("expoWord").hidden = t.group !== "expo";
+  $("tPage").textContent = t.page + "쪽";
+  $("tTitle").textContent = t.title;
+  $("tBook").hidden = !t.book;
+  $("tBook").textContent = t.book ? "📖 " + t.book : "";
+  $("tFig").innerHTML = "";
+  if (t.img) $("tFig").appendChild(figure(t.img));
   const box = $("markBox");
   box.innerHTML = "";
-  $("markFig").innerHTML = "";
-  if (c.img) $("markFig").appendChild(figure(c.img));
-  parts(c.text).forEach((t, i) => {
-    const sp = el("span", "chunk", t.trimEnd()); // 조각 사이 띄어쓰기는 칠하지 않아 조각이 나뉘어 보이게
+  parts(t.text).forEach((x, i) => {
+    const sp = el("span", "chunk", x.trimEnd()); // 조각 사이 띄어쓰기는 칠하지 않아 조각이 나뉘어 보이게
     pickable(sp, "checkbox", S.marks.includes(i), () => {
+      if (S.submitted) return;
       const on = S.marks.includes(i);
       if (!on && S.marks.length >= 2) { toast("형광펜은 2곳까지야. 하나를 지우고 칠해 줘."); return; }
-      S.marks = on ? S.marks.filter(x => x !== i) : S.marks.concat(i);
+      S.marks = on ? S.marks.filter(m => m !== i) : S.marks.concat(i);
       sp.setAttribute("aria-checked", on ? "false" : "true");
-      save(); refreshPremise();
+      save(); refreshOpen();
     });
     box.appendChild(sp);
-    if (t !== t.trimEnd()) box.appendChild(document.createTextNode(" "));
+    if (x !== x.trimEnd()) box.appendChild(document.createTextNode(" "));
   });
-  $("markCite").textContent = c.cite || "";
-  $("markNote").textContent = c.note ? "※ " + c.note : "";
-  $("premiseHint").textContent = c.hint;
-  refreshPremise();
-}
-
-function refreshPremise() {
-  const n = val("premise").length;
-  $("premiseCount").textContent = n + "자 (40자 안쪽이면 좋아)";
-  $("premiseCount").classList.toggle("warn", n > 40);
-  $("s2Next").disabled = (S.marks.length < 1 || n < 2) && !skip();
-}
-
-/* ── 읽기 1/5 ~ 5/5 ── */
-function renderRead() {
-  const s = SOURCES[S.ri];
-  $("readProg").textContent = "읽기 " + (S.ri + 1) + "/" + SOURCES.length;
-  $("expoWord").hidden = S.ri !== 0;
-  $("srcPage").textContent = s.page + "쪽";
-  $("srcTitle").textContent = s.title;
-  const body = $("srcBody");
-  body.innerHTML = "";
-  body.appendChild(el("p", "", plain(s.body)));
-  $("srcCite").textContent = s.cite || "";
-  const caps = $("srcCaps");
+  $("markCite").textContent = t.cite || "";
+  $("markNote").textContent = t.note ? "※ " + t.note : "";
+  const caps = $("tCaps");
   caps.innerHTML = "";
-  s.captions.forEach(c => {
-    const d = el("div", "cap");
-    const h = el("span", "cap-head");
-    h.appendChild(el("span", "cap-tag", "사진 설명"));
-    h.appendChild(document.createTextNode(c.head));
-    d.appendChild(h);
-    d.appendChild(el("span", "", c.text));
-    if (c.img) d.appendChild(figure(c.img));
-    caps.appendChild(rise(d));
+  t.captions.forEach(c => caps.appendChild(rise(captionCard(c))));
+  /* 빈칸: rank는 3칸, need(로즈)는 2칸. 칸은 고정 id(f1~f3)라 draft_guard가 그대로 되살린다 */
+  const fr = frameOf(t);
+  FRAME_IDS.forEach((id, i) => {
+    const row = $(id).closest(".frame-row");
+    row.hidden = !fr[i];
+    if (fr[i]) row.querySelector("label").textContent = fr[i].label;
   });
-  const rb = $("reactBox");
-  rb.innerHTML = "";
-  REACTIONS.forEach(r => {
-    const b = el("div", "react");
-    b.appendChild(el("span", "ri", r.icon));
-    b.appendChild(document.createTextNode(r.name));
-    pickable(b, "radio", S.reacts[s.id] === r.id, () => {
-      S.reacts[s.id] = r.id; save();
-      rb.querySelectorAll(".react").forEach(x => x.setAttribute("aria-checked", x === b ? "true" : "false"));
-      $("s3Next").disabled = false; $("s3Err").textContent = "";
-    });
-    rb.appendChild(b);
-  });
-  $("s3Next").disabled = !S.reacts[s.id] && !skip();
+  $("frameHint").textContent = t.hint;
+  refreshOpen();
 }
 
-/* ── 읽기 마지막: 근거 고르기 ── */
+function refreshOpen() {
+  const fr = frameOf(targetObj());
+  const filled = fr.every(f => val(f.id).length >= 1);
+  $("s2Next").disabled = (S.marks.length < 1 || !filled) && !skip();
+}
+
+/* ── 근거 고르기: 신문 + 9장 중 하나, 문장 1~2개 ── */
 function renderEvidence() {
   const box = $("evList");
   box.innerHTML = "";
-  const rank = s => ({ clash: 0, unsure: 1, fit: 2 }[S.reacts[s.id]] ?? 3);
-  SOURCES.slice().sort((a, b) => rank(a) - rank(b)).forEach(s => {
-    const r = byId(REACTIONS, S.reacts[s.id]);
-    const b = el("div", "ev");
-    b.appendChild(el("span", "", s.title));
-    b.appendChild(el("span", "ev-tag" + (r && r.id === "clash" ? " clash" : ""), r ? r.icon + " " + r.name : s.page + "쪽"));
-    pickable(b, "radio", S.ev === s.id, () => {
-      if (S.ev !== s.id) { S.ev = s.id; S.quote = []; }
-      save(); renderEvidence();
+  const groups = [{ name: "169쪽 · 조선 사람의 목소리", items: [REFERENCE] }]
+    .concat(GROUPS.map(g => ({ name: g.name, items: TARGETS.filter(t => t.group === g.id) })));
+  groups.forEach(g => {
+    box.appendChild(el("h3", "group-head", g.name));
+    const grid = el("div", "ev-list");
+    grid.setAttribute("role", "radiogroup");
+    g.items.forEach(s => {
+      const b = el("div", "ev");
+      b.appendChild(el("span", "", s.title));
+      b.appendChild(el("span", "ev-tag", s.id === S.target ? "내가 고른 대상" : s.page + "쪽"));
+      b.dataset.id = s.id;
+      pickable(b, "radio", S.ev === s.id, () => {
+        if (S.submitted || S.ev === s.id) return;
+        S.ev = s.id; S.quote = [];
+        save(); renderEvidence();
+        const again = box.querySelector('.ev[data-id="' + s.id + '"]');
+        if (again) again.focus({ preventScroll: true }); // 다시 그려도 키보드 위치를 잃지 않게
+        const open = $("evOpen");
+        if (open.scrollIntoView) open.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+      grid.appendChild(b);
     });
-    box.appendChild(b);
+    box.appendChild(grid);
   });
   const s = evObj();
   $("evOpen").hidden = !s;
   if (s) {
     $("evPage").textContent = s.page + "쪽";
     $("evTitle").textContent = s.title;
+    $("evBook").hidden = !s.book;
+    $("evBook").textContent = s.book ? "📖 " + s.book : "";
     const list = $("evSents");
     list.innerHTML = "";
-    const nBody = parts(s.body).length;
-    sentList(s).forEach((t, i) => {
+    const nBody = parts(s.text).length;
+    sentList(s).forEach((x, i) => {
       const d = el("div", "sent");
       if (i >= nBody) d.appendChild(el("span", "s-tag", "사진 설명"));
-      d.appendChild(document.createTextNode(t));
+      d.appendChild(document.createTextNode(x));
       pickable(d, "checkbox", S.quote.includes(i), () => {
+        if (S.submitted) return;
         const on = S.quote.includes(i);
         if (!on && S.quote.length >= 2) { toast("근거 문장은 2개까지야."); return; }
-        S.quote = on ? S.quote.filter(x => x !== i) : S.quote.concat(i);
+        S.quote = on ? S.quote.filter(q => q !== i) : S.quote.concat(i);
         d.setAttribute("aria-checked", on ? "false" : "true");
         save(); refreshEvidenceNext();
       });
@@ -335,19 +368,19 @@ function renderEvidence() {
 }
 
 function refreshEvidenceNext() {
-  $("s4Next").disabled = (!S.ev || !S.quote.length) && !skip();
+  $("s3Next").disabled = (!S.ev || !S.quote.length) && !skip();
 }
 
 /* ── 쓰기 ── */
 function refreshWrite() {
   $("w1c").textContent = val("w1").length + "자";
   $("w2c").textContent = val("w2").length + "자";
-  $("s5Next").disabled = (val("w1").length < 5 || val("w2").length < 5) && !skip();
+  $("s4Next").disabled = (val("w1").length < 5 || val("w2").length < 5) && !skip();
 }
 
 /* ── 마무리 ── */
 const bodyText = () => [val("w1"), val("w2")].filter(Boolean).join(" ");
-const copyHead = () => { const c = claimObj(); return c ? "「" + c.title + "」에 반박하기 (교과서 " + c.page + "쪽)" : ""; };
+const copyHead = () => { const t = targetObj(); return t ? "「" + t.title + "」 비판하기 (" + pageLabel(t) + ")" : ""; };
 const copyAll = () => copyHead() + "\n" + bodyText();
 
 function renderSummary() {
@@ -373,13 +406,15 @@ function renderPadlet() {
   }
 }
 
+/* 시트 G열: [대상] … / [위] … / [아래] … / [기준] … / [근거] 제목: 문장 / ① … / ② … (로즈는 [누구의 필요]·[누구의 땅]) */
+const FRAME_TAGS = { rank: ["위", "아래", "기준"], show: ["위", "기준"], need: ["누구의 필요", "누구의 땅"] };
 function reflectionText() {
-  const c = claimObj(), s = evObj();
-  return "[주장] " + (c ? c.title : "") +
-    " / [전제] " + val("premise") +
-    " / [근거] " + (s ? s.title : "") + ": " + quoteText() +
-    " / ① " + val("w1") +
-    " / ② " + val("w2");
+  const t = targetObj(), s = evObj();
+  const tags = FRAME_TAGS[(t && t.frame) || "rank"];
+  return ["[대상] " + (t ? t.title : "")]
+    .concat(tags.map((g, i) => "[" + g + "] " + val(FRAME_IDS[i])))
+    .concat(["[근거] " + (s ? s.title : "") + ": " + quoteText(), "① " + val("w1"), "② " + val("w2")])
+    .join(" / ");
 }
 
 async function submitAll() {
@@ -388,16 +423,16 @@ async function submitAll() {
   const n = bodyText().length;
   if (n < TEXT.minChars && !skip() && !confirm("아직 " + n + "자야. " + TEXT.minChars + "자보다 짧은데 그래도 제출할까?")) return;
   S.sending = true; renderSummary(); $("submitBtn").textContent = "보내는 중…";
-  const c = claimObj(), s = evObj();
+  const t = targetObj(), s = evObj();
   const payload = {
     studentId: S.sid, studentName: S.name, gameName: CONFIG.GAME_NAME,
-    choiceSummary: (c ? c.title : "") + " ← " + (s ? s.title : ""),
+    choiceSummary: (t ? t.title : "") + " ← " + (s ? s.title : ""),
     diffSummary: "",
     reflection: reflectionText(), // 시트 G열
     choicesJson: JSON.stringify({
       sid: S.sid, name: S.name, ban: S.ban,
-      claimId: S.claim, marks: S.marks.map(i => c ? parts(c.text)[i] : i),
-      premise: val("premise"), reacts: S.reacts,
+      targetId: S.target, marks: S.marks.map(i => t ? parts(t.text)[i] : i),
+      frame: t ? t.frame : "", f1: val("f1"), f2: val("f2"), f3: val("f3"),
       sourceId: S.ev, quote: quoteText(), s1: val("w1"), s2: val("w2"),
       writing: bodyText(), ts: new Date().toISOString()
     })
@@ -415,7 +450,7 @@ async function submitAll() {
     if (window.DraftGuard) DraftGuard.clear(); // 저장 성공 → 임시저장 삭제
     clearSave();
   }
-  ["premise", "w1", "w2"].forEach(id => { $(id).readOnly = true; });
+  FRAME_IDS.concat(["w1", "w2"]).forEach(id => { $(id).readOnly = true; });
   renderSummary();
   $("outMsg").textContent = S.preview ? "미리보기라 저장하지 않았어." : (S.copied ? "제출했어! 복사한 글을 패들렛에 올려 줘." : "제출했어! 이제 글을 복사해서 패들렛에 올려 줘.");
 }
@@ -449,7 +484,24 @@ function startApp() {
   loadPadletUrl(p.grade, p.ban).then(u => { S.padletUrl = u; renderPadlet(); });
   load();
   show(SCREEN_STAGE[S.screen] ? S.screen : "s1");
-  setTimeout(() => { refreshPremise(); refreshWrite(); renderPin(S.screen); }, 700); // draft_guard가 글을 되살린 뒤 다시 그린다
+  setTimeout(() => { if (S.screen === "s2") refreshOpen(); refreshWrite(); renderPin(S.screen); }, 700); // draft_guard가 글을 되살린 뒤 다시 그린다
+}
+
+/* 빈칸 3줄(f1~f3)은 화면에 미리 만들어 두고 대상마다 이름표만 바꾼다 */
+function buildFrameRows() {
+  const box = $("frameBox");
+  FRAME_IDS.forEach(id => {
+    const row = el("div", "frame-row");
+    const lb = el("label");
+    lb.setAttribute("for", id);
+    const inp = el("input");
+    inp.id = id; inp.maxLength = 40; inp.autocomplete = "off";
+    inp.setAttribute("data-draft", id);
+    inp.placeholder = TEXT.framePh;
+    inp.addEventListener("input", refreshOpen);
+    row.appendChild(lb); row.appendChild(inp);
+    box.appendChild(row);
+  });
 }
 
 /* ── 부팅 (모든 함수 선언 뒤, 파일 맨 마지막) ── */
@@ -471,22 +523,19 @@ function init() {
     }), { threshold: 0.1 });
   }
 
+  buildFrameRows();
   $("eyebrow").textContent = INTRO.eyebrow;
   $("appTitle").textContent = INTRO.title;
   $("introQ").textContent = INTRO.question;
-  $("claimQ").textContent = TEXT.claimQ;
-  $("claimHow").textContent = TEXT.claimHow;
+  $("pickQ").textContent = TEXT.pickQ;
+  $("pickHow").textContent = TEXT.pickHow;
+  $("expoWord").textContent = "💬 " + EXPO_WORD + " (168쪽)";
   $("markQ").textContent = TEXT.markQ;
   $("markHow").textContent = TEXT.markHow;
-  $("premiseQ").textContent = TEXT.premiseQ;
-  $("premiseLead").textContent = TEXT.premiseLead;
-  $("premiseTail").textContent = TEXT.premiseTail;
-  $("premise").placeholder = TEXT.premisePh;
-  $("expoWord").textContent = "💬 " + EXPO_WORD + " (168쪽)";
-  $("readHow").textContent = TEXT.readHow;
-  $("reactQ").textContent = TEXT.reactQ;
+  $("frameQ").textContent = TEXT.frameQ;
   $("evQ").textContent = TEXT.evQ;
   $("evHow").textContent = TEXT.evHow;
+  TEXT.evHints.forEach(h => $("evHint").appendChild(el("li", "", h)));
   $("w1Q").textContent = TEXT.w1Q;
   $("w2Q").textContent = TEXT.w2Q;
   $("w1").placeholder = TEXT.wPh;
@@ -495,31 +544,25 @@ function init() {
   $("padletNote").textContent = TEXT.padletNote;
 
   $("startBtn").addEventListener("click", startApp);
-  $("s1Next").addEventListener("click", () => { if (S.claim || skip()) { if (!S.claim) S.claim = CLAIMS[0].id; show("s2"); } });
+  $("s1Next").addEventListener("click", () => { if (S.target || skip()) { if (!S.target) S.target = TARGETS[0].id; show("s2"); } });
   $("s2Prev").addEventListener("click", () => show("s1"));
   $("s2Next").addEventListener("click", () => {
-    if (S.marks.length < 1 && !skip()) { $("s2Err").textContent = "주장에서 1곳 이상 형광펜을 칠해 줘."; return; }
-    if (val("premise").length < 2 && !skip()) { $("s2Err").textContent = "빈칸을 채워 줘."; return; }
-    $("s2Err").textContent = ""; S.ri = 0; show("s3");
+    if (S.marks.length < 1 && !skip()) { $("s2Err").textContent = "1곳 이상 형광펜을 칠해 줘."; return; }
+    if (!frameOf(targetObj()).every(f => val(f.id)) && !skip()) { $("s2Err").textContent = "빈칸을 모두 채워 줘."; return; }
+    $("s2Err").textContent = ""; show("s3");
   });
-  $("premise").addEventListener("input", refreshPremise);
-  $("s3Prev").addEventListener("click", () => { if (S.ri > 0) { S.ri--; show("s3"); } else show("s2"); });
+  $("s3Prev").addEventListener("click", () => show("s2"));
   $("s3Next").addEventListener("click", () => {
-    if (!S.reacts[SOURCES[S.ri].id] && !skip()) { $("s3Err").textContent = "세 가지 중 하나를 눌러 줘."; return; }
-    if (S.ri < SOURCES.length - 1) { S.ri++; show("s3"); } else show("s4");
-  });
-  $("s4Prev").addEventListener("click", () => { S.ri = SOURCES.length - 1; show("s3"); });
-  $("s4Next").addEventListener("click", () => {
-    if ((!S.ev || !S.quote.length) && !skip()) { $("s4Err").textContent = "자료를 고르고 근거 문장을 1개 이상 눌러 줘."; return; }
-    $("s4Err").textContent = ""; show("s5");
+    if ((!S.ev || !S.quote.length) && !skip()) { $("s3Err").textContent = "자료를 고르고 근거 문장을 1개 이상 눌러 줘."; return; }
+    $("s3Err").textContent = ""; show("s4");
   });
   ["w1", "w2"].forEach(id => $(id).addEventListener("input", refreshWrite));
-  $("s5Prev").addEventListener("click", () => show("s4"));
-  $("s5Next").addEventListener("click", () => {
-    if ((val("w1").length < 5 || val("w2").length < 5) && !skip()) { $("s5Err").textContent = "①과 ②를 한 문장씩 써 줘."; return; }
-    $("s5Err").textContent = ""; show("s6");
+  $("s4Prev").addEventListener("click", () => show("s3"));
+  $("s4Next").addEventListener("click", () => {
+    if ((val("w1").length < 5 || val("w2").length < 5) && !skip()) { $("s4Err").textContent = "①과 ②를 한 문장씩 써 줘."; return; }
+    $("s4Err").textContent = ""; show("s5");
   });
-  $("s6Prev").addEventListener("click", () => show("s5"));
+  $("s5Prev").addEventListener("click", () => show("s4"));
   $("copyBtn").addEventListener("click", async () => {
     const ok = await copyText(copyAll());
     S.copied = ok;
@@ -532,7 +575,7 @@ function init() {
     b.setAttribute("aria-expanded", h.hidden ? "false" : "true");
   }));
 
-  Glossary.start({ terms: GLOSSARY, skip: [".eyebrow", ".c-title", ".credit", "#steps", ".progress", ".react", ".ev", ".page-tag", ".cap-tag", ".s-tag", ".c-kind", ".pin b", ".toast", ".preview-bar"] });
+  Glossary.start({ terms: GLOSSARY, skip: [".eyebrow", ".c-title", ".credit", "#steps", ".progress", ".group-head", ".ev", ".page-tag", ".cap-tag", ".s-tag", ".c-kind", ".pin b", ".toast", ".preview-bar"] });
 }
 
 init();

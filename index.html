@@ -18,8 +18,9 @@
     <div id="eyebrow" class="eyebrow"></div>
     <h1 id="appTitle"></h1>
     <ol id="steps" class="steps" aria-label="진행 단계" hidden>
-      <li data-k="find">찾기</li>
-      <li data-k="read">읽기</li>
+      <li data-k="pick">고르기</li>
+      <li data-k="open">뜯어보기</li>
+      <li data-k="ev">근거</li>
       <li data-k="write">쓰기</li>
       <li data-k="wrap">마무리</li>
     </ol>
@@ -41,78 +42,61 @@
     </div>
   </section>
 
-  <!-- S1 찾기 1/2: 주장 고르기 -->
+  <!-- S1 고르기: 비판할 대상 9장 -->
   <section id="s1" class="screen" hidden>
-    <div class="progress">찾기 1/2</div>
-    <h2 id="claimQ"></h2>
-    <p id="claimHow" class="how"></p>
-    <div id="claimList" class="claim-grid" role="radiogroup"></div>
+    <div class="progress">고르기</div>
+    <h2 id="pickQ"></h2>
+    <p id="pickHow" class="how"></p>
+    <div id="pickList"></div>
     <div class="nav"><span></span><button id="s1Next" class="btn">다음</button></div>
   </section>
 
-  <!-- S2 찾기 2/2: 형광펜 + 믿음(전제) 한 줄 -->
+  <!-- S2 뜯어보기: 형광펜 + 위·아래 빈칸 -->
   <section id="s2" class="screen" hidden>
-    <div class="progress">찾기 2/2</div>
+    <div class="progress">뜯어보기</div>
+    <p id="expoWord" class="word-box" hidden></p>
     <div class="card">
-      <h2 id="markQ"></h2>
+      <div id="tPage" class="page-tag"></div>
+      <h2 id="tTitle"></h2>
+      <p id="tBook" class="book-note" hidden></p>
+      <div id="tFig"></div>
+      <p id="markQ" class="q first"></p>
       <p id="markHow" class="how"></p>
-      <div id="markFig"></div>
       <div id="markBox" class="mark-box"></div>
       <p id="markCite" class="cite"></p>
       <p id="markNote" class="note-cap"></p>
     </div>
+    <div id="tCaps"></div>
     <div class="card">
-      <label for="premise" id="premiseQ" class="q"></label>
-      <div class="fill-line">
-        <span id="premiseLead"></span>
-        <input id="premise" maxlength="80" autocomplete="off" data-draft="premise">
-        <span id="premiseTail"></span>
-      </div>
-      <p id="premiseCount" class="count"></p>
-      <button type="button" class="hint-btn" data-hint="premiseHint" aria-expanded="false">💡 막막하면 힌트 보기</button>
-      <p id="premiseHint" class="hint" hidden></p>
+      <p id="frameQ" class="q first"></p>
+      <div id="frameBox" class="frame-box"></div>
+      <button type="button" class="hint-btn" data-hint="frameHint" aria-expanded="false">💡 막막하면 힌트 보기</button>
+      <p id="frameHint" class="hint" hidden></p>
     </div>
     <p id="s2Err" class="err" role="alert"></p>
     <div class="nav"><button id="s2Prev" class="btn btn-ghost">이전</button><button id="s2Next" class="btn">다음</button></div>
   </section>
 
-  <!-- S3 읽기 1/5 ~ 5/5 -->
+  <!-- S3 근거 고르기 -->
   <section id="s3" class="screen" hidden>
-    <div id="readProg" class="progress"></div>
-    <p id="expoWord" class="word-box" hidden></p>
-    <p id="readHow" class="how"></p>
-    <article class="card source">
-      <div id="srcPage" class="page-tag"></div>
-      <h2 id="srcTitle"></h2>
-      <div id="srcBody" class="src-body"></div>
-      <p id="srcCite" class="cite"></p>
-    </article>
-    <div id="srcCaps"></div>
-    <div class="card react-card">
-      <p id="reactQ" class="q first"></p>
-      <div id="reactBox" class="react-row" role="radiogroup"></div>
+    <div class="progress">근거</div>
+    <h2 id="evQ"></h2>
+    <button type="button" class="hint-btn top" data-hint="evHint" aria-expanded="false">💡 어디서 찾을지 막막하면</button>
+    <ul id="evHint" class="hint hint-list" hidden></ul>
+    <div id="evList"></div>
+    <div id="evOpen" class="card" hidden>
+      <div id="evPage" class="page-tag"></div>
+      <h3 id="evTitle"></h3>
+      <p id="evBook" class="book-note" hidden></p>
+      <p id="evHow" class="how"></p>
+      <div id="evSents" class="sent-list"></div>
     </div>
     <p id="s3Err" class="err" role="alert"></p>
     <div class="nav"><button id="s3Prev" class="btn btn-ghost">이전</button><button id="s3Next" class="btn">다음</button></div>
   </section>
 
-  <!-- S4 읽기 마지막: 근거 고르기 -->
+  <!-- S4 쓰기 -->
   <section id="s4" class="screen" hidden>
-    <div class="progress">읽기 마지막</div>
-    <h2 id="evQ"></h2>
-    <div id="evList" class="ev-list" role="radiogroup"></div>
-    <div id="evOpen" class="card" hidden>
-      <div id="evPage" class="page-tag"></div>
-      <h3 id="evTitle"></h3>
-      <p id="evHow" class="how"></p>
-      <div id="evSents" class="sent-list"></div>
-    </div>
-    <p id="s4Err" class="err" role="alert"></p>
-    <div class="nav"><button id="s4Prev" class="btn btn-ghost">이전</button><button id="s4Next" class="btn">다음</button></div>
-  </section>
-
-  <!-- S5 쓰기 -->
-  <section id="s5" class="screen" hidden>
     <div class="progress">쓰기</div>
     <div class="card">
       <label for="w1" id="w1Q" class="q first"></label>
@@ -124,12 +108,12 @@
       <button type="button" class="hint-btn" data-hint="wHint" aria-expanded="false">💡 막막하면 힌트 보기</button>
       <p id="wHint" class="hint" hidden></p>
     </div>
-    <p id="s5Err" class="err" role="alert"></p>
-    <div class="nav"><button id="s5Prev" class="btn btn-ghost">이전</button><button id="s5Next" class="btn">다 썼어</button></div>
+    <p id="s4Err" class="err" role="alert"></p>
+    <div class="nav"><button id="s4Prev" class="btn btn-ghost">이전</button><button id="s4Next" class="btn">다 썼어</button></div>
   </section>
 
-  <!-- S6 마무리 -->
-  <section id="s6" class="screen" hidden>
+  <!-- S5 마무리 -->
+  <section id="s5" class="screen" hidden>
     <div class="progress">마무리</div>
     <div class="card">
       <h2>완성한 글</h2>
@@ -147,7 +131,7 @@
       <p id="outMsg" class="ok" role="status"></p>
       <p id="outErr" class="err" role="alert"></p>
     </div>
-    <div class="nav"><button id="s6Prev" class="btn btn-ghost">이전</button><span></span></div>
+    <div class="nav"><button id="s5Prev" class="btn btn-ghost">이전</button><span></span></div>
   </section>
 
   <div id="toast" class="toast" role="status" hidden></div>

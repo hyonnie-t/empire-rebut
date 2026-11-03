@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ctx = {};
 vm.createContext(ctx);
-vm.runInContext(fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n;this.D={INTRO,CLAIMS,SOURCES,EXPO_WORD,TEXT,GLOSSARY,REACTIONS};', ctx);
+vm.runInContext(fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n;this.D={INTRO,TARGETS,REFERENCE,EXPO_WORD,TEXT,GLOSSARY,FRAMES,GROUPS};', ctx);
 const D = ctx.D;
 const plain = s => s.replace(/\|/g, '');
 let fail = 0;
@@ -36,20 +36,27 @@ const SRC_ORIG = {
 };
 const EXPO_ORIG = '박람회란 한 나라 또는 지역의 문화나 산업 상태를 소개하기 위해 각종 물품을 소개하는 전시회야.';
 
-eq('주장 카드 6장', D.CLAIMS.map(c => c.id).join(','), Object.keys(CLAIM_ORIG).join(','));
-D.CLAIMS.forEach(c => eq('주장 ' + c.id, plain(c.text) + (c.cite ? ' ' + c.cite : ''), CLAIM_ORIG[c.id]));
-eq('로즈 풀이', D.CLAIMS[0].note, ROSE_NOTE);
-eq('박람회 자료 5개', D.SOURCES.map(s => s.id).join(','), Object.keys(SRC_ORIG).join(','));
-D.SOURCES.forEach(s => {
-  eq('자료 ' + s.id + ' 본문', plain(s.body) + (s.cite ? ' ' + s.cite : ''), SRC_ORIG[s.id][0]);
-  eq('자료 ' + s.id + ' 캡션', JSON.stringify(s.captions.map(c => c.head + ' ' + c.text)), JSON.stringify(SRC_ORIG[s.id][1]));
-});
+const claims = D.TARGETS.filter(x => x.group === 'claim'), byId = id => D.TARGETS.find(x => x.id === id);
+eq('주장 카드 6장', claims.map(c => c.id).join(','), Object.keys(CLAIM_ORIG).join(','));
+claims.forEach(c => eq('주장 ' + c.id, plain(c.text) + (c.cite ? ' ' + c.cite : ''), CLAIM_ORIG[c.id]));
+eq('로즈 풀이', byId('rhodes').note, ROSE_NOTE);
+eq('로즈만 need 틀', D.TARGETS.filter(x => x.frame === 'need').map(x => x.id).join(), 'rhodes');
+// 박람회 대상 3장: 런던+파리는 한 장(본문을 띄어쓰기 하나로 이음), 신문은 참고 자료
+const cap = s => JSON.stringify(s.captions.map(c => c.head + ' ' + c.text));
+eq('박람회 대상 3장', D.TARGETS.filter(x => x.group === 'expo').map(x => x.id).join(), 'expoMachine,expoStlouis,expoJapan');
+eq('런던·파리 본문', plain(byId('expoMachine').text), SRC_ORIG.london[0] + ' ' + SRC_ORIG.paris[0]);
+eq('런던·파리 캡션', cap(byId('expoMachine')), JSON.stringify(SRC_ORIG.london[1].concat(SRC_ORIG.paris[1])));
+eq('세인트루이스 본문', plain(byId('expoStlouis').text), SRC_ORIG.stlouis[0]);
+eq('세인트루이스 캡션', cap(byId('expoStlouis')), JSON.stringify(SRC_ORIG.stlouis[1]));
+eq('도쿄·오사카 본문', plain(byId('expoJapan').text), SRC_ORIG.japan[0]);
+eq('도쿄·오사카 캡션', cap(byId('expoJapan')), JSON.stringify(SRC_ORIG.japan[1]));
+eq('신문(참고)', plain(D.REFERENCE.text) + ' ' + D.REFERENCE.cite, SRC_ORIG.newspaper[0]);
 eq('박람회 풀이', D.EXPO_WORD, EXPO_ORIG);
-eq('사회 진화론 «왜곡해» 유지', /왜곡해/.test(D.CLAIMS[2].text), true);
+eq('사회 진화론 «왜곡해» 유지', /왜곡해/.test(byId('socialdarwin').text), true);
 // 168쪽 도입 문단(결론 방향)이 안 들어갔는지
 eq('도입 문단 없음', /정당화했는지/.test(fs.readFileSync(path.join(dir, 'data.js'), 'utf8')), false);
 // 예시·힌트에 결론 문장 금지: «틀렸다/잘못이다/거짓» 같은 판정 낱말이 힌트·placeholder에 없어야 한다
-const hints = D.CLAIMS.map(c => c.hint).concat([D.TEXT.wHint, D.TEXT.premisePh, D.TEXT.wPh]);
+const hints = D.TARGETS.map(c => c.hint).concat(D.TEXT.evHints, [D.TEXT.wHint, D.TEXT.framePh, D.TEXT.wPh]);
 eq('힌트에 판정 낱말 없음', hints.filter(h => /틀렸|잘못|거짓|차별|정당하지/.test(h)).length, 0);
 eq('토인종 풀이에 «지금은 쓰지 않음»', /지금은.*쓰지 않는다/.test(D.GLOSSARY['토인종']), true);
 

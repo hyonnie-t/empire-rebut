@@ -29,13 +29,13 @@ h3{font-size:1.05rem}
 .book-head{position:sticky;top:0;z-index:5;background:var(--paper);padding:12px 0 8px;border-bottom:1px solid var(--line);margin-bottom:12px}
 .eyebrow{font:500 .85rem var(--sans);color:var(--plum);letter-spacing:.02em}
 .book-head h1{font-size:1.3rem;margin:2px 0 6px}
-.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;list-style:none;padding:0;margin:0}
+.steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;list-style:none;padding:0;margin:0}
 .steps li{font:500 .85rem var(--sans);text-align:center;padding:4px 0;border-top:3px solid var(--line);color:var(--muted)}
 .steps li.done{border-color:var(--plum);color:var(--plum)}
 .steps li.now{border-color:var(--seal);color:var(--seal);font-weight:700}
 
 /* 고정 띠 */
-.pin{background:var(--page);border:1px solid var(--line);border-left:4px solid var(--plum);border-radius:5px;padding:8px 12px;margin-bottom:12px;font-size:1rem;line-height:1.6}
+.pin{background:var(--page);border:1px solid var(--line);border-top:2px solid var(--plum);border-radius:5px;padding:8px 12px;margin-bottom:12px;font-size:1rem;line-height:1.6}
 .pin p{margin:2px 0}
 .pin b{font:700 .8rem var(--sans);color:var(--plum);margin-right:6px}
 .pin .mine b{color:var(--seal)}
@@ -45,7 +45,7 @@ h3{font-size:1.05rem}
 .card{background:var(--page);border:1px solid var(--line);border-radius:5px;padding:16px;margin-bottom:12px;box-shadow:0 1px 2px rgba(40,20,50,.06)}
 .lead{font-size:1.1rem;font-weight:700;margin:0 0 12px}
 .progress{font:700 .85rem var(--sans);color:var(--plum);margin:4px 0 6px}
-.how{font:400 .92rem var(--sans);color:var(--muted);margin:0 0 10px}
+.how{font:400 1rem var(--sans);color:var(--muted);margin:0 0 10px}
 .q{display:block;font:700 1rem var(--sans);margin:16px 0 6px}
 .q.first{margin-top:0}
 label{display:block;font:500 .95rem var(--sans);margin:10px 0 4px}
@@ -56,7 +56,7 @@ input:focus,textarea:focus{outline:2px solid var(--plum);outline-offset:1px}
 .count.warn{color:var(--alert)}
 .err{color:var(--alert);font:500 .95rem var(--sans);min-height:0;margin:6px 0}
 .ok{color:var(--ok);font:500 .95rem var(--sans)}
-.note,.note-cap{font-size:.9rem;color:var(--muted);margin:6px 0 0}
+.note,.note-cap{font-size:.95rem;color:var(--muted);margin:6px 0 0}
 .cite{font-size:.95rem;color:var(--muted);text-align:right;margin:6px 0 0}
 .cite:empty,.note-cap:empty{display:none}
 
@@ -90,7 +90,7 @@ input:focus,textarea:focus{outline:2px solid var(--plum);outline-offset:1px}
 .hint{background:var(--plum-wash);border-radius:5px;padding:10px 12px;font-size:.95rem;margin:8px 0 0}
 
 /* 읽기 */
-.word-box{background:var(--slate-wash);border-left:4px solid var(--slate);border-radius:4px;padding:8px 12px;font-size:.95rem;margin:0 0 10px}
+.word-box{background:var(--slate-wash);border:1px solid var(--slate-wash);border-radius:4px;padding:8px 12px;font-size:.95rem;margin:0 0 10px}
 .page-tag{font:500 .8rem var(--sans);color:var(--muted);float:right}
 .source h2{margin-right:60px}
 .src-body p{margin:0 0 8px}
@@ -113,6 +113,17 @@ input:focus,textarea:focus{outline:2px solid var(--plum);outline-offset:1px}
 .sent{border:1px solid var(--line);border-radius:5px;padding:10px 12px;cursor:pointer;font-size:.98rem;background:#fff}
 .sent[aria-checked="true"]{background:linear-gradient(transparent 0,var(--marker) 0);border-color:var(--marker-line)}
 .sent .s-tag{font:500 .75rem var(--sans);color:var(--muted);display:block}
+
+/* 묶음 제목·빈칸·교과서 안내 */
+.group-head{font:700 .95rem var(--sans);color:var(--plum);margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.group-head:first-child{margin-top:4px}
+.frame-box{display:grid;gap:10px}
+.frame-row label{margin:0 0 4px;font:700 .95rem var(--sans)}
+.book-note{background:var(--marker);border-radius:4px;padding:6px 10px;font:500 .95rem var(--sans);margin:6px 0 10px}
+.hint-btn.top{padding:0 0 8px}
+.hint-list{margin:0 0 12px;padding:10px 12px 10px 30px}
+.hint-list li{margin:2px 0}
+.ev-list{margin-bottom:4px}
 
 /* 그림: 교과서와 같은 원본(퍼블릭 도메인)만. 출처 한 줄 */
 .fig{margin:10px 0 0}
