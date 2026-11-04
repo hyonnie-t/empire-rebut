@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 <div id="previewBar" class="preview-bar" hidden></div>
@@ -25,9 +25,6 @@
       <li data-k="wrap">마무리</li>
     </ol>
   </header>
-
-  <!-- 고정 띠: 앞에서 고른 것·쓴 것을 다시 보여 준다 -->
-  <aside id="pin" class="pin" hidden></aside>
 
   <!-- S0 시작 -->
   <section id="s0" class="screen">
@@ -54,6 +51,8 @@
   <!-- S2 뜯어보기: 형광펜 + 위·아래 빈칸 -->
   <section id="s2" class="screen" hidden>
     <div class="progress">뜯어보기</div>
+    <div class="split">
+    <div class="col-src">
     <p id="expoWord" class="word-box" hidden></p>
     <div class="card">
       <div id="tPage" class="page-tag"></div>
@@ -68,6 +67,8 @@
       <p id="markNote" class="note-cap"></p>
     </div>
     <div id="tCaps"></div>
+    </div>
+    <div class="col-write">
     <div class="card">
       <p id="frameQ" class="q first"></p>
       <div id="frameBox" class="frame-box"></div>
@@ -76,15 +77,23 @@
     </div>
     <p id="s2Err" class="err" role="alert"></p>
     <div class="nav"><button id="s2Prev" class="btn btn-ghost">이전</button><button id="s2Next" class="btn">다음</button></div>
+    </div>
+    </div>
   </section>
 
   <!-- S3 근거 고르기 -->
   <section id="s3" class="screen" hidden>
     <div class="progress">근거</div>
+    <div class="split">
+    <div class="col-src">
+    <div class="pin-slot"></div>
     <h2 id="evQ"></h2>
     <button type="button" class="hint-btn top" data-hint="evHint" aria-expanded="false">💡 어디서 찾을지 막막하면</button>
     <ul id="evHint" class="hint hint-list" hidden></ul>
     <div id="evList"></div>
+    </div>
+    <div class="col-write">
+    <p id="evEmpty" class="ev-empty">왼쪽에서 자료를 골라 봐.</p>
     <div id="evOpen" class="card" hidden>
       <div id="evPage" class="page-tag"></div>
       <h3 id="evTitle"></h3>
@@ -95,11 +104,18 @@
     </div>
     <p id="s3Err" class="err" role="alert"></p>
     <div class="nav"><button id="s3Prev" class="btn btn-ghost">이전</button><button id="s3Next" class="btn">다음</button></div>
+    </div>
+    </div>
   </section>
 
   <!-- S4 쓰기 -->
   <section id="s4" class="screen" hidden>
     <div class="progress">쓰기</div>
+    <div class="split">
+    <div class="col-src">
+    <div class="pin-slot"></div>
+    </div>
+    <div class="col-write">
     <div class="card">
       <label for="w1" id="w1Q" class="q first"></label>
       <textarea id="w1" rows="2"></textarea>
@@ -112,6 +128,8 @@
     </div>
     <p id="s4Err" class="err" role="alert"></p>
     <div class="nav"><button id="s4Prev" class="btn btn-ghost">이전</button><button id="s4Next" class="btn">다 썼어</button></div>
+    </div>
+    </div>
   </section>
 
   <!-- S5 마무리 -->
@@ -136,12 +154,13 @@
     <div class="nav"><button id="s5Prev" class="btn btn-ghost">이전</button><span></span></div>
   </section>
 
+  <aside id="pin" class="pin" hidden></aside>
   <div id="toast" class="toast" role="status" hidden></div>
 </main>
 <script src="focus_guard.js"></script>
 <script src="glossary.js"></script>
 <script src="draft_guard.js"></script>
-<script src="data.js?v=3"></script>
-<script src="app.js?v=3"></script>
+<script src="data.js?v=4"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>

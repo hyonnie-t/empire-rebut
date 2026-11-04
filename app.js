@@ -209,8 +209,16 @@ function show(id) {
   if (id === "s3") renderEvidence();
   if (id === "s4") refreshWrite();
   if (id === "s5") renderSummary();
+  const slot = document.querySelector("#" + id + " .pin-slot");
+  if (slot) slot.appendChild($("pin")); // 고정 띠는 왼쪽(자료) 칸 맨 위로
   renderPin(id);
+  syncHead();
   window.scrollTo(0, 0);
+}
+
+/* 가로 모드에서 오른쪽 글쓰기 칸이 머리 띠 바로 아래에 붙도록 머리 높이를 CSS에 알려 준다 */
+function syncHead() {
+  document.documentElement.style.setProperty("--head-h", document.querySelector(".book-head").offsetHeight + "px");
 }
 
 /* 고정 띠: 앞에서 고른 것·쓴 것을 다음 화면 위에 다시 보여 준다 */
@@ -356,6 +364,7 @@ function renderEvidence() {
   });
   const s = evObj();
   $("evOpen").hidden = !s;
+  $("evEmpty").hidden = !!s;
   if (s) {
     $("evPage").textContent = s.page + "쪽";
     $("evTitle").textContent = s.title;
@@ -540,6 +549,7 @@ function init() {
   }
 
   buildFrameRows();
+  window.addEventListener("resize", syncHead);
   $("eyebrow").textContent = INTRO.eyebrow;
   $("appTitle").textContent = INTRO.title;
   $("introQ").textContent = INTRO.question;

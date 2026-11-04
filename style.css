@@ -154,3 +154,26 @@ input:focus,textarea:focus{outline:2px solid var(--plum);outline-offset:1px}
 .rise{opacity:0;transform:translateY(8px);transition:opacity .3s,transform .3s}
 .rise.in{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.rise{opacity:1;transform:none}}
+
+/* 근거 화면 안내는 가로 2단에서만(세로는 목록 바로 아래에 자료가 펼쳐진다) */
+.ev-empty{display:none}
+
+/* 태블릿 가로: 왼쪽 자료 · 오른쪽 글쓰기. 오른쪽은 머리 띠 아래에 붙어 자료를 스크롤해도 그대로 보인다(2026-11-04 효니) */
+@media (min-width:900px) and (orientation:landscape){
+  .page{max-width:min(96vw,80rem)}
+  .book-head{padding:6px 0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:20px;align-items:center}
+  .eyebrow{display:none}
+  .book-head h1{font-size:1.1rem;margin:0}
+  .progress{display:none}
+  .split{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
+  .col-write{position:sticky;top:calc(var(--head-h,60px) + 8px);max-height:calc(100vh - var(--head-h,60px) - 16px);overflow-y:auto}
+  .col-write .card{margin-bottom:8px}
+  .col-write .nav{position:sticky;bottom:0;background:var(--paper);padding:8px 0;margin:0} /* 근거 문장이 길어도 다음 버튼은 늘 보이게 */
+  .col-write textarea{min-height:7em}
+  .ev-empty{display:block;border:1px dashed var(--line);border-radius:5px;padding:24px 16px;text-align:center;color:var(--muted);font:500 1rem var(--sans)}
+  .ev-empty[hidden]{display:none}
+  .fig img{max-height:42vh;object-fit:contain}
+  .fig.thumb img{max-height:none}
+  .claim-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  #s0 .card{max-width:32rem;margin-inline:auto}
+}
