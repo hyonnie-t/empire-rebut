@@ -176,6 +176,20 @@ function frameVals() {
   return frameOf(targetObj()).map(f => ({ label: f.label, v: val(f.id) }));
 }
 const pageLabel = t => "교과서 " + t.page + "쪽";
+/* 누르는 카드·조각 안에는 밑줄을 긋지 않는다(낱말 위를 누르면 칠해지지 않던 문제, 2026-11-04 효니).
+ * 대신 그 글에 나오는 어려운 낱말을 아래 줄에 따로 모아 눌러 보게 한다. glossary.js가 이 줄에 밑줄을 입힌다. */
+function renderWords(box, s) {
+  const all = plain(s.text) + " " + (s.cite || "");
+  const found = Object.keys(GLOSSARY).filter(k => all.includes(k));
+  /* «사회 진화론» 안의 «진화론»은 빼되, 글에 따로 나오면(«진화론을 왜곡해») 남긴다 */
+  const alone = k => found.filter(o => o !== k && o.includes(k)).reduce((t, o) => t.split(o).join(" "), all).includes(k);
+  const words = found.filter(alone).sort((a, b) => all.indexOf(a) - all.indexOf(b));
+  box.innerHTML = "";
+  box.hidden = !words.length;
+  if (!words.length) return;
+  box.appendChild(el("span", "words-label", TEXT.wordsLabel));
+  words.forEach(w => box.appendChild(el("span", "word", w)));
+}
 
 /* ── 화면 전환 ── */
 function show(id) {
@@ -289,6 +303,7 @@ function renderOpen() {
     box.appendChild(sp);
     if (x !== x.trimEnd()) box.appendChild(document.createTextNode(" "));
   });
+  renderWords($("markWords"), t);
   $("markCite").textContent = t.cite || "";
   $("markNote").textContent = t.note ? "※ " + t.note : "";
   const caps = $("tCaps");
@@ -346,6 +361,7 @@ function renderEvidence() {
     $("evTitle").textContent = s.title;
     $("evBook").hidden = !s.book;
     $("evBook").textContent = s.book ? "📖 " + s.book : "";
+    renderWords($("evWords"), s);
     const list = $("evSents");
     list.innerHTML = "";
     const nBody = parts(s.text).length;
@@ -575,7 +591,7 @@ function init() {
     b.setAttribute("aria-expanded", h.hidden ? "false" : "true");
   }));
 
-  Glossary.start({ terms: GLOSSARY, skip: [".eyebrow", ".c-title", ".credit", "#steps", ".progress", ".group-head", ".ev", ".page-tag", ".cap-tag", ".s-tag", ".c-kind", ".pin b", ".toast", ".preview-bar"] });
+  Glossary.start({ terms: GLOSSARY, skip: [".chunk", ".sent", ".claim", ".words-label", ".eyebrow", ".c-title", ".credit", "#steps", ".progress", ".group-head", ".ev", ".page-tag", ".cap-tag", ".s-tag", ".c-kind", ".pin b", ".toast", ".preview-bar"] });
 }
 
 init();

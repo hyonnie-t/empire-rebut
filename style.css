@@ -83,8 +83,14 @@ input:focus,textarea:focus{outline:2px solid var(--plum);outline-offset:1px}
 .mark-box{font-size:1.05rem;line-height:2.1}
 .chunk{cursor:pointer;border-radius:3px;padding:3px 2px;background:var(--plum-wash);box-shadow:inset 0 -2px 0 var(--line);-webkit-box-decoration-break:clone;box-decoration-break:clone;transition:background .15s;-webkit-tap-highlight-color:transparent}
 .chunk[aria-checked="true"]{background:var(--marker);box-shadow:inset 0 -2px 0 var(--marker-line)}
+.words{font:400 1rem var(--sans);margin:10px 0 0;line-height:2}
+.words-label{color:var(--muted);margin-right:6px}
+.word{display:inline-block;margin-right:10px}
 .fill-line{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px;align-items:center;font-size:1rem}
-@media (max-width:420px){.fill-line{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:420px){.words{font:400 1rem var(--sans);margin:10px 0 0;line-height:2}
+.words-label{color:var(--muted);margin-right:6px}
+.word{display:inline-block;margin-right:10px}
+.fill-line{grid-template-columns:minmax(0,1fr)}}
 
 .hint-btn{background:none;border:none;color:var(--plum);font:500 .95rem var(--sans);padding:10px 0 0;cursor:pointer}
 .hint{background:var(--plum-wash);border-radius:5px;padding:10px 12px;font-size:.95rem;margin:8px 0 0}
