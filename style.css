@@ -27,7 +27,10 @@ h3{font-size:1.05rem}
 
 /* 머리: 단계 막대는 늘 보이게 sticky */
 .book-head{position:sticky;top:0;z-index:5;background:var(--paper);padding:12px 0 8px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.head-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .eyebrow{font:500 .85rem var(--sans);color:var(--plum);letter-spacing:.02em}
+.word-btn{min-height:40px;padding:4px 10px;border:1px solid var(--plum);border-radius:5px;background:var(--page);color:var(--plum);font:700 .85rem var(--sans);cursor:pointer;white-space:nowrap;touch-action:manipulation}
+.word-btn[aria-expanded="true"]{background:var(--plum);color:#fff}
 .book-head h1{font-size:1.3rem;margin:2px 0 6px}
 .steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;list-style:none;padding:0;margin:0}
 .steps li{font:500 .85rem var(--sans);text-align:center;padding:4px 0;border-top:3px solid var(--line);color:var(--muted)}
@@ -78,6 +81,21 @@ input:focus,textarea:focus{outline:2px solid var(--plum);outline-offset:1px}
 .claim .c-kind{font:500 .78rem var(--sans);color:var(--plum);border:1px solid var(--plum);border-radius:3px;padding:0 5px}
 .claim .c-text{font-size:.95rem;margin:0}
 .claim .c-page{font:400 .8rem var(--sans);color:var(--muted);text-align:right;margin:4px 0 0}
+
+.claim-wrap{display:flex;flex-direction:column;min-width:0}
+.claim-wrap .claim{flex:1}
+.pick-words{margin:4px 2px 0;font-size:.95rem}
+
+/* 모르는 낱말 찾기 */
+.word-sheet{position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:30;width:min(32rem,calc(100vw - 16px));max-height:calc(100vh - 16px);overflow-y:auto;background:var(--page);border:2px solid var(--plum);border-radius:6px;box-shadow:0 8px 24px rgba(40,20,50,.28);padding:12px 14px;font-family:var(--sans)}
+.word-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.word-title{font:700 1.05rem var(--sans);color:var(--plum)}
+.word-close{min-height:44px;padding:4px 14px}
+.word-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.word-result:not(:empty){margin-top:10px}
+.word-msg{margin:0 0 8px;color:var(--muted);font-size:.95rem;line-height:1.6}
+.word-item{background:var(--plum-wash);border-radius:5px;padding:8px 12px;margin-top:6px;line-height:1.6}
+.word-item b{display:block;color:var(--plum)}
 
 /* 형광펜 조각 */
 .mark-box{font-size:1.05rem;line-height:2.1}
@@ -161,7 +179,8 @@ input:focus,textarea:focus{outline:2px solid var(--plum);outline-offset:1px}
 /* 태블릿 가로: 왼쪽 자료 · 오른쪽 글쓰기. 오른쪽은 머리 띠 아래에 붙어 자료를 스크롤해도 그대로 보인다(2026-11-04 효니) */
 @media (min-width:900px) and (orientation:landscape){
   .page{max-width:min(96vw,80rem)}
-  .book-head{padding:6px 0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:20px;align-items:center}
+  .book-head{padding:6px 0;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:20px;align-items:center}
+  .head-top{order:3}
   .eyebrow{display:none}
   .book-head h1{font-size:1.1rem;margin:0}
   .progress{display:none}

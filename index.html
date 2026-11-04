@@ -9,13 +9,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 <div id="previewBar" class="preview-bar" hidden></div>
 <main class="page">
   <header class="book-head">
-    <div id="eyebrow" class="eyebrow"></div>
+    <div class="head-top">
+      <div id="eyebrow" class="eyebrow"></div>
+      <button type="button" id="wordBtn" class="word-btn" aria-expanded="false" aria-controls="wordSheet" hidden></button>
+    </div>
     <h1 id="appTitle"></h1>
     <ol id="steps" class="steps" aria-label="진행 단계" hidden>
       <li data-k="pick">고르기</li>
@@ -156,11 +159,25 @@
 
   <aside id="pin" class="pin" hidden></aside>
   <div id="toast" class="toast" role="status" hidden></div>
+
+  <!-- 모르는 낱말 찾기: 화면 키보드에 가리지 않게 위쪽에 띄운다 -->
+  <div id="wordSheet" class="word-sheet" role="dialog" aria-labelledby="wordTitle" data-no-gloss hidden>
+    <div class="word-head">
+      <span id="wordTitle" class="word-title"></span>
+      <button type="button" id="wordClose" class="btn btn-ghost word-close">닫기</button>
+    </div>
+    <form id="wordForm" class="word-form">
+      <input id="wordInput" maxlength="15" autocomplete="off" enterkeyhint="search" aria-labelledby="wordTitle" data-no-draft>
+      <button class="btn">찾기</button>
+    </form>
+    <div id="wordResult" class="word-result" aria-live="polite"></div>
+  </div>
 </main>
 <script src="focus_guard.js"></script>
 <script src="glossary.js"></script>
 <script src="draft_guard.js"></script>
-<script src="data.js?v=4"></script>
-<script src="app.js?v=4"></script>
+<script src="data.js?v=5"></script>
+<script src="word_lookup.js?v=5"></script>
+<script src="app.js?v=5"></script>
 </body>
 </html>
