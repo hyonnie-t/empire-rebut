@@ -10,13 +10,13 @@ const CONFIG = {
 
 const S = {
   sid: "", name: "", grade: 0, ban: 0, preview: false, screen: "s1",
-  target: "", marks: [], ev: "", quote: [],
+  target: "", marks: [], ev: "", quote: [], asked: [],
   copied: false, sending: false, submitted: false, padletUrl: ""
 };
 
 const SCREEN_STAGE = { s1: "pick", s2: "open", s3: "ev", s4: "write", s5: "wrap" };
 const STAGES = ["pick", "open", "ev", "write", "wrap"];
-const SAVE_KEYS = ["screen", "target", "marks", "ev", "quote"];
+const SAVE_KEYS = ["screen", "target", "marks", "ev", "quote", "asked"];
 const FRAME_IDS = ["f1", "f2", "f3"];
 
 const $ = id => document.getElementById(id);
@@ -178,8 +178,7 @@ function frameVals() {
 const pageLabel = t => "교과서 " + t.page + "쪽";
 /* 누르는 카드·조각 안에는 밑줄을 긋지 않는다(낱말 위를 누르면 칠해지지 않던 문제, 2026-11-04 효니).
  * 대신 그 글에 나오는 어려운 낱말을 아래 줄에 따로 모아 눌러 보게 한다. glossary.js가 이 줄에 밑줄을 입힌다. */
-function renderWords(box, s) {
-  const all = plain(s.text) + " " + (s.cite || "");
+function renderWords(box, all, label) {
   const found = Object.keys(GLOSSARY).filter(k => all.includes(k));
   /* «사회 진화론» 안의 «진화론»은 빼되, 글에 따로 나오면(«진화론을 왜곡해») 남긴다 */
   const alone = k => found.filter(o => o !== k && o.includes(k)).reduce((t, o) => t.split(o).join(" "), all).includes(k);
@@ -187,8 +186,47 @@ function renderWords(box, s) {
   box.innerHTML = "";
   box.hidden = !words.length;
   if (!words.length) return;
-  box.appendChild(el("span", "words-label", TEXT.wordsLabel));
+  box.appendChild(el("span", "words-label", label || TEXT.wordsLabel));
   words.forEach(w => box.appendChild(el("span", "word", w)));
+}
+const fullText = s => plain(s.text) + " " + (s.cite || "");
+
+/* ── 모르는 낱말 찾기: 사전에서 찾아 바로 보여 주고, 찾아본 낱말은 제출할 때 선생님께 같이 보낸다 ── */
+function toggleWordSheet(open) {
+  const sheet = $("wordSheet");
+  if (open === sheet.hidden) {
+    sheet.hidden = !open;
+    $("wordBtn").setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) $("wordInput").focus();
+    else $("wordBtn").focus();
+  }
+}
+
+/* 선생님께 전해지면 true(제출 뒤이거나 20개를 넘으면 false) */
+function rememberWord(word, hit) {
+  if (S.submitted) return false;
+  if (S.asked.some(a => a.w === word)) return true;
+  if (S.asked.length >= 20) return false;
+  S.asked = S.asked.concat({ w: word, hit: hit });
+  save();
+  return true;
+}
+
+function findWord() {
+  const word = val("wordInput").replace(/\s+/g, " ");
+  const r = lookupWord(word, GLOSSARY, WORD_FORMS);
+  const box = $("wordResult");
+  box.innerHTML = "";
+  if (r.hit === "short") { box.appendChild(el("p", "word-msg", TEXT.wordShort)); return; }
+  const sent = rememberWord(word, r.hit);
+  if (r.hit === "none") { box.appendChild(el("p", "word-msg", TEXT.wordNone + (sent ? TEXT.wordSent : ""))); return; }
+  if (r.hit === "near") box.appendChild(el("p", "word-msg", TEXT.wordNear));
+  r.items.forEach(x => {
+    const d = el("div", "word-item");
+    d.appendChild(el("b", "", x.word));
+    d.appendChild(el("span", "", x.meaning));
+    box.appendChild(d);
+  });
 }
 
 /* ── 화면 전환 ── */
@@ -197,6 +235,7 @@ function show(id) {
   document.querySelectorAll(".screen").forEach(sc => { sc.hidden = sc.id !== id; });
   const stage = SCREEN_STAGE[id];
   $("steps").hidden = !stage;
+  $("wordBtn").hidden = !stage;
   if (stage) {
     const k = STAGES.indexOf(stage);
     $("steps").querySelectorAll("li").forEach((li, i) => {
@@ -266,7 +305,13 @@ function renderPick() {
       card.appendChild(el("p", "c-text", preview));
       card.appendChild(el("p", "c-page", t.page + "쪽"));
       pickable(card, "radio", S.target === t.id, () => pickTarget(t, card));
-      grid.appendChild(rise(card));
+      /* 낱말 풀이는 누르는 카드 밖에 둔다. 카드에 보이는 글에 나온 낱말만 */
+      const wrap = el("div", "claim-wrap");
+      wrap.appendChild(card);
+      const words = el("p", "words pick-words");
+      renderWords(words, preview, TEXT.pickWordsLabel);
+      wrap.appendChild(words);
+      grid.appendChild(rise(wrap));
     });
     box.appendChild(grid);
   });
@@ -311,7 +356,7 @@ function renderOpen() {
     box.appendChild(sp);
     if (x !== x.trimEnd()) box.appendChild(document.createTextNode(" "));
   });
-  renderWords($("markWords"), t);
+  renderWords($("markWords"), fullText(t));
   $("markCite").textContent = t.cite || "";
   $("markNote").textContent = t.note ? "※ " + t.note : "";
   const caps = $("tCaps");
@@ -370,7 +415,7 @@ function renderEvidence() {
     $("evTitle").textContent = s.title;
     $("evBook").hidden = !s.book;
     $("evBook").textContent = s.book ? "📖 " + s.book : "";
-    renderWords($("evWords"), s);
+    renderWords($("evWords"), fullText(s));
     const list = $("evSents");
     list.innerHTML = "";
     const nBody = parts(s.text).length;
@@ -431,7 +476,9 @@ function renderPadlet() {
   }
 }
 
-/* 시트 G열: [대상] … / [위] … / [아래] … / [기준] … / [근거] 제목: 문장 / ① … / ② … (로즈는 [누구의 필요]·[누구의 땅]) */
+/* 시트 G열: [대상] … / [위] … / [아래] … / [기준] … / [근거] 제목: 문장 / ① … / ② … (로즈는 [누구의 필요]·[누구의 땅])
+ * 찾아본 낱말이 있으면 끝에 / [찾아본 낱말] 그릇되다, 전파(풀이 없음) */
+const askedText = () => S.asked.map(a => a.w + (a.hit === "none" ? "(풀이 없음)" : "")).join(", ");
 const FRAME_TAGS = { rank: ["위", "아래", "기준"], show: ["위", "기준"], need: ["누구의 필요", "누구의 땅"] };
 function reflectionText() {
   const t = targetObj(), s = evObj();
@@ -439,6 +486,7 @@ function reflectionText() {
   return ["[대상] " + (t ? t.title : "")]
     .concat(tags.map((g, i) => "[" + g + "] " + val(FRAME_IDS[i])))
     .concat(["[근거] " + (s ? s.title : "") + ": " + quoteText(), "① " + val("w1"), "② " + val("w2")])
+    .concat(S.asked.length ? ["[찾아본 낱말] " + askedText()] : [])
     .join(" / ");
 }
 
@@ -459,6 +507,7 @@ async function submitAll() {
       targetId: S.target, marks: S.marks.map(i => t ? parts(t.text)[i] : i),
       frame: t ? t.frame : "", f1: val("f1"), f2: val("f2"), f3: val("f3"),
       sourceId: S.ev, quote: quoteText(), s1: val("w1"), s2: val("w2"),
+      asked: S.asked,
       writing: bodyText(), ts: new Date().toISOString()
     })
   };
@@ -568,6 +617,15 @@ function init() {
   $("w2").placeholder = TEXT.wPh;
   $("wHint").textContent = TEXT.wHint;
   $("padletNote").textContent = TEXT.padletNote;
+  $("wordBtn").textContent = TEXT.wordBtn;
+  $("wordTitle").textContent = TEXT.wordTitle;
+  $("wordInput").placeholder = TEXT.wordPh;
+  $("wordBtn").addEventListener("click", () => toggleWordSheet($("wordSheet").hidden));
+  $("wordClose").addEventListener("click", () => toggleWordSheet(false));
+  $("wordForm").addEventListener("submit", e => { e.preventDefault(); findWord(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") toggleWordSheet(false); });
+  /* 찾기 칸에 붙여 넣거나 끌어다 놓은 낱말은 글쓰기 붙여넣기(focus_guard 기록)로 세지 않는다 */
+  ["paste", "drop"].forEach(t => window.addEventListener(t, e => { if (e.target === $("wordInput")) e.stopImmediatePropagation(); }, true));
 
   $("startBtn").addEventListener("click", startApp);
   $("s1Next").addEventListener("click", () => { if (S.target || skip()) { if (!S.target) S.target = TARGETS[0].id; show("s2"); } });

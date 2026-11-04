@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ctx = {};
 vm.createContext(ctx);
-vm.runInContext(fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n;this.D={INTRO,TARGETS,REFERENCE,EXPO_WORD,TEXT,GLOSSARY,FRAMES,GROUPS};', ctx);
+vm.runInContext(fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n;this.D={INTRO,TARGETS,REFERENCE,EXPO_WORD,TEXT,GLOSSARY,FRAMES,GROUPS,WORD_FORMS};', ctx);
 const D = ctx.D;
 const plain = s => s.replace(/\|/g, '');
 let fail = 0;
@@ -59,6 +59,22 @@ eq('도입 문단 없음', /정당화했는지/.test(fs.readFileSync(path.join(d
 const hints = D.TARGETS.map(c => c.hint).concat(D.TEXT.evHints, [D.TEXT.wHint, D.TEXT.framePh, D.TEXT.wPh]);
 eq('힌트에 판정 낱말 없음', hints.filter(h => /틀렸|잘못|거짓|차별|정당하지/.test(h)).length, 0);
 eq('토인종 풀이에 «지금은 쓰지 않음»', /지금은.*쓰지 않는다/.test(D.GLOSSARY['토인종']), true);
+
+// 모르는 낱말 찾기: 꼴이 달라도 찾히고, 없는 낱말은 없다고 답한다
+vm.runInContext(fs.readFileSync(path.join(dir, 'word_lookup.js'), 'utf8') + '\n;this.lookupWord=lookupWord;', ctx);
+const look = w => ctx.lookupWord(w, D.GLOSSARY, D.WORD_FORMS);
+const words = w => look(w).items.map(x => x.word).join();
+const same = (w, key) => eq('찾기: ' + w + ' → ' + key, look(w).hit + ':' + words(w), 'exact:' + key);
+same('그릇된', '그릇된'); same('그릇되다', '그릇된'); same('자아내다', '자아냈다');
+same('우월하다', '우월'); same('개최하다', '개최'); same('왜곡된', '왜곡'); same('인종의', '인종'); same('박람회를', '박람회');
+eq('찾기: 앞부분만 쓰면 near', look('진화').hit + ':' + words('진화'), 'near:진화론');
+// 앞글자만 같거나 안에 들어 있다고 엉뚱한 풀이를 보여 주지 않는다
+['자아정체성', '수정하다', '사회주의', '원주율', '미개척지', '기관', '선전포고', '인종차별', '박람회장'].forEach(w => eq('찾기: ' + w + ' 풀이 없음', look(w).hit, 'none'));
+eq('찾기: 띄어쓰기 달라도', look('사회진화론').hit + ':' + words('사회진화론'), 'exact:사회 진화론');
+eq('찾기: 없는 낱말', look('양자역학').hit, 'none');
+eq('찾기: 한 글자', look('제').hit, 'short');
+eq('찾기: 빈 칸', look('   ').hit, 'short');
+eq('찾기: 최대 4개', look('인종').items.length <= 4, true);
 
 console.log(fail ? '\n실패 ' + fail + '건' : '\n모두 통과');
 process.exit(fail ? 1 : 0);
