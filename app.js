@@ -1,6 +1,6 @@
 /* 주제34 「제국주의자에게 반박하기」 — 로직(app.js)
  * 화면 순서: 시작 → 고르기(비판할 대상 9장: 166쪽 주장 6 + 박람회 3) → 뜯어보기(형광펜 + 위·아래·기준 빈칸)
- *          → 근거(166~169쪽 어디서든 자료 하나 + 문장 1~2개) → 쓰기(①②) → 마무리(복사·패들렛·제출)
+ *          → 근거(166~169쪽 어디서든 자료 하나 + 문장 1~2개) → 쓰기(①②) → 마무리(제출하고 복사하기 → 패들렛)
  * 문구·원문은 data.js. 2026-11-03 효니 피드백으로 «박람회=근거» 구조에서 «박람회도 비판 대상»으로 바꿈. */
 const CONFIG = {
   SHEET_WEBAPP_URL: "https://script.google.com/macros/s/AKfycbyXSjCfWY_HiZFqW_OBR-FQDoIfF1z_STqyKWUI31MacHeY3u7hbirFSFDvW-5yuUHaJQ/exec",
@@ -463,13 +463,16 @@ function renderSummary() {
   $("bodyCount").textContent = "내가 쓴 글 " + n + "자 (첫 줄 제외)" + (short ? " — " + TEXT.minChars + "자 이상 써 보자." : "");
   $("bodyCount").classList.toggle("warn", short);
   $("submitBtn").disabled = S.submitted || S.sending;
-  $("submitBtn").textContent = S.submitted ? "제출 완료" : "제출";
+  $("submitBtn").textContent = S.submitted ? "제출 완료" : "제출하고 복사하기";
+  $("copyBtn").hidden = !S.submitted;
   renderPadlet();
 }
 
 function renderPadlet() {
   const a = $("padletBtn");
-  if (S.padletUrl) {
+  if (!S.submitted) {
+    a.hidden = true; $("padletMsg").textContent = "제출하면 패들렛 버튼이 열려.";
+  } else if (S.padletUrl) {
     a.href = S.padletUrl; a.hidden = false; $("padletMsg").textContent = "";
   } else {
     a.hidden = true; $("padletMsg").textContent = "패들렛 링크는 선생님이 알려 준 곳을 써 줘.";
@@ -495,6 +498,7 @@ async function submitAll() {
   $("outErr").textContent = "";
   const n = bodyText().length;
   if (n < TEXT.minChars && !skip() && !confirm("아직 " + n + "자야. " + TEXT.minChars + "자보다 짧은데 그래도 제출할까?")) return;
+  const copyP = Promise.race([copyText(copyAll()), new Promise(r => setTimeout(() => r(false), 3000))]); // 클릭 직후에 복사를 먼저 시작해야 브라우저가 허용한다
   S.sending = true; renderSummary(); $("submitBtn").textContent = "보내는 중…";
   const t = targetObj(), s = evObj();
   const payload = {
@@ -515,10 +519,11 @@ async function submitAll() {
   try {
     await postToSheet(payload);
   } catch (e) {
-    $("outErr").textContent = e.locked ? e.message : "저장이 안 됐어. 인터넷을 확인하고 다시 눌러 줘.";
+    $("outErr").textContent = e.locked ? e.message : "저장이 안 됐어. 인터넷을 확인하고 다시 눌러 줘. (패들렛은 제출한 뒤에 열려.)";
     S.sending = false; renderSummary();
     return;
   }
+  S.copied = await copyP;
   S.sending = false; S.submitted = true;
   if (!S.preview) {
     if (window.DraftGuard) DraftGuard.clear(); // 저장 성공 → 임시저장 삭제
@@ -526,7 +531,7 @@ async function submitAll() {
   }
   FRAME_IDS.concat(["w1", "w2"]).forEach(id => { $(id).readOnly = true; });
   renderSummary();
-  $("outMsg").textContent = S.preview ? "미리보기라 저장하지 않았어." : (S.copied ? "제출했어! 복사한 글을 패들렛에 올려 줘." : "제출했어! 이제 글을 복사해서 패들렛에 올려 줘.");
+  $("outMsg").textContent = S.preview ? "미리보기라 저장하지 않았어." : (S.copied ? "제출했고 글도 복사했어! 패들렛에 붙여 넣어 줘." : "제출했어! 복사가 안 됐으니 «다시 복사»를 눌러 패들렛에 올려 줘.");
 }
 
 async function copyText(text) {
